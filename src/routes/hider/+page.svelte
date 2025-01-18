@@ -1,13 +1,12 @@
 <script>
-  import Grid from '../Grid.svelte';
-
-  import {newGrid, removeTrail, drawTrail, isValidCoords, toGrid, getSeekerCoords, isGrid, isOver, isStatus} from '$lib/gameHelpers';
-  import { EMPTY_COLOR } from '$lib/constants';
-
+	import Grid from '../Grid.svelte';
+	import { VISION_COLOR } from '$lib/constants';
+  import {newGrid, arraysAreEqual, drawTrail, getHiderCoords, isGrid, isOver, isStatus, isValidCoords, removeTrail, toGrid} from '$lib/gameHelpers';
   /** @type {number[]} */
-  let fastSeekerCoords = [];
+  /** @type {number[]} */
+  let fastHiderCoords = [];
   /** @type {number[][]} */
-  let fastSeekerTrail = [];
+  let fastHiderTrail = [];
   /** @type {number[]} */
   let intervals = [];
   let win = false;
@@ -17,14 +16,14 @@
   let gameSteps;
   let connected = false;
 
-  let grid = newGrid(EMPTY_COLOR)
+  let grid = newGrid(VISION_COLOR);
 
-  function resetFastSeeker() {
-    fastSeekerTrail = [];
-    fastSeekerCoords = getSeekerCoords(grid) ?? [];
+  function resetFastHider() {
+    fastHiderTrail = [];
+    fastHiderCoords = getHiderCoords(grid) ?? [];
     console.log('reset fast seeker');
-    console.log(`fast_seeker_trail: ${fastSeekerTrail}`);
-    console.log(`fast_seeker_coords: ${fastSeekerCoords}`);
+    console.log(`fast_seeker_trail: ${fastHiderTrail}`);
+    console.log(`fast_seeker_coords: ${fastHiderCoords}`);
   }
 
   /**
@@ -33,38 +32,38 @@
   function handleKeyDown(event) {
     if (event.key === 'Escape') {
       socket.send(JSON.stringify({move: []}))
-      removeTrail(grid, EMPTY_COLOR);
-      resetFastSeeker();
+      grid = removeTrail(grid, VISION_COLOR);
+      resetFastHider();
     }
     if (event.key === 'w' || event.key === 'k') {
-      if (isValidCoords([fastSeekerCoords[0]-1, fastSeekerCoords[1]])) {
-        fastSeekerCoords[0] -= 1;
-        fastSeekerTrail.push([...fastSeekerCoords])
+      if (isValidCoords([fastHiderCoords[0]-1, fastHiderCoords[1]])) {
+        fastHiderCoords[0] -= 1;
+        fastHiderTrail.push([...fastHiderCoords])
       }
     }
     if (event.key === 'a' || event.key === 'h') {
-      if (isValidCoords([fastSeekerCoords[0], fastSeekerCoords[1]-1])) {
-        fastSeekerCoords[1] -= 1;
-        fastSeekerTrail.push([...fastSeekerCoords])
+      if (isValidCoords([fastHiderCoords[0], fastHiderCoords[1]-1])) {
+        fastHiderCoords[1] -= 1;
+        fastHiderTrail.push([...fastHiderCoords])
       }
     }
     if (event.key === 's' || event.key === 'j') {
-      if (isValidCoords([fastSeekerCoords[0]+1, fastSeekerCoords[1]])) {
-        fastSeekerCoords[0] += 1;
-        fastSeekerTrail.push([...fastSeekerCoords])
+      if (isValidCoords([fastHiderCoords[0]+1, fastHiderCoords[1]])) {
+        fastHiderCoords[0] += 1;
+        fastHiderTrail.push([...fastHiderCoords])
       }
     }
     if (event.key === 'd' || event.key === 'l') {
-      if (isValidCoords([fastSeekerCoords[0], fastSeekerCoords[1]+1])) {
-        fastSeekerCoords[1] += 1;
-        fastSeekerTrail.push([...fastSeekerCoords])
+      if (isValidCoords([fastHiderCoords[0], fastHiderCoords[1]+1])) {
+        fastHiderCoords[1] += 1;
+        fastHiderTrail.push([...fastHiderCoords])
       }
     }
-    if (fastSeekerTrail.length === 1) {
-      console.log(`Sending: ${JSON.stringify({move: fastSeekerTrail[0]})}`);
-      socket.send(JSON.stringify({move: fastSeekerTrail[0]}))
+    if (fastHiderTrail.length === 1) {
+      console.log(`Sending: ${JSON.stringify({move: fastHiderTrail[0]})}`);
+      socket.send(JSON.stringify({move: fastHiderTrail[0]}))
     }
-    grid = drawTrail(grid, fastSeekerTrail);
+    grid = drawTrail(grid, fastHiderTrail);
   }
 
   function cleanUp() {
@@ -81,7 +80,7 @@
     // Event listeners
     socket.addEventListener('open', (_) => {
       console.log('WebSocket connection opened');
-      socket.send(JSON.stringify({role: "seeker"}));
+      socket.send(JSON.stringify({role: "hider"}));
     });
 
     socket.addEventListener('message', (event) => {
@@ -95,22 +94,22 @@
       }
       if (isGrid(msg)){
         grid = toGrid(msg.grid);
-        if (fastSeekerTrail.length > 0) {
-          fastSeekerTrail.shift();
+        if (fastHiderTrail.length > 0 && arraysAreEqual(getHiderCoords(grid) ?? [], fastHiderTrail[0])) {
+          fastHiderTrail.shift();
         }
-        if (fastSeekerCoords.length !== 2) {
-          resetFastSeeker();
+        if (fastHiderCoords.length !== 2) {
+          resetFastHider();
         }
-        grid = drawTrail(grid, fastSeekerTrail);
-        if (fastSeekerTrail.length > 0) {
-          socket.send(JSON.stringify({move: fastSeekerTrail[0]}))
+        grid = drawTrail(grid, fastHiderTrail);
+        if (fastHiderTrail.length > 0) {
+          socket.send(JSON.stringify({move: fastHiderTrail[0]}))
         }
       } else if (isStatus(msg)) {
         if (!connected && msg.status === 'success') {
           connected = true;
         }
         if (msg.status === 'fail') {
-          resetFastSeeker();
+          resetFastHider();
         }
       } else if (isOver(msg)) {
         gameSteps = msg.game_steps;
@@ -139,7 +138,7 @@
 </script>
 
 {#if win}
-  <div class="text-8xl"><strong>YOU WON after {gameSteps} steps</strong></div>
+  <div class="text-8xl"><strong>YOU LOST after {gameSteps} steps</strong></div>
 {/if}
 <Grid grid={grid}/>
 Connected: {connected}
