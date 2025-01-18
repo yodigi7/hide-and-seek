@@ -37,3 +37,23 @@ npm run build
 ```
 
 You can preview the production build with `npm run preview`.
+
+## Compute engine
+
+Run in the background
+
+```bash
+nohup npm run dev -- --host &
+```
+
+Get the process id in background
+
+```bash
+pgrep -f "npm run dev"
+```
+
+Kill background process
+
+```bash
+kill <PID>
+```
