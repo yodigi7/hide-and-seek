@@ -6,7 +6,7 @@ import { ROWS, COLS, SEEKER_VALUE, FAST_SEEKER_COLOR, FAST_SEEKER_TRAIL_COLOR, V
  * @returns {string[][]} A 2D array (board) filled with the specified color.
  */
 export function newGrid(color) {
-  return Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => color));
+    return Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => color));
 }
 
 /**
@@ -25,9 +25,9 @@ export function isValidCoords(coords) {
 export function getValueCoords(grid, value) {
     for (let i = 0; i < grid.length; i++) {
         for (let j = 0; j < grid[i].length; j++) {
-        if (grid[i][j] === NUMBER_TO_MAP[value]) {
-            return [i, j];
-        }
+            if (grid[i][j] === NUMBER_TO_MAP[value]) {
+                return [i, j];
+            }
         }
     }
     return undefined;
@@ -122,9 +122,9 @@ export function drawTrail(grid, trail) {
 export function removeTrail(grid, replace_color) {
     for (let row = 0; row < grid.length; row++) {
         for (let col = 0; col < grid[row].length; col++) {
-        if (grid[row][col] === FAST_SEEKER_COLOR || grid[row][col] === FAST_SEEKER_TRAIL_COLOR) {
-            grid[row][col] = replace_color;
-        }
+            if (grid[row][col] === FAST_SEEKER_COLOR || grid[row][col] === FAST_SEEKER_TRAIL_COLOR) {
+                grid[row][col] = replace_color;
+            }
         }
     }
     return grid;
@@ -144,4 +144,37 @@ export function arraysAreEqual(arr1, arr2) {
         }
     }
     return true;
+}
+
+
+/**
+ * @param {KeyboardEvent} event
+ */
+export function isRightEvent(event) {
+    console.log(event);
+    return event.key === 'd' || event.key === 'l' || event.key === 'ArrowRight';
+}
+
+/**
+ * @param {KeyboardEvent} event
+ */
+export function isLeftEvent(event) {
+    console.log(event);
+    return event.key === 'a' || event.key === 'h' || event.key === 'ArrowLeft';
+}
+
+/**
+ * @param {KeyboardEvent} event
+ */
+export function isDownEvent(event) {
+    console.log(event);
+    return event.key === 's' || event.key === 'j' || event.key === 'ArrowDown';
+}
+
+/**
+ * @param {KeyboardEvent} event
+ */
+export function isUpEvent(event) {
+    console.log(event);
+    return event.key === 'w' || event.key === 'k' || event.key === 'ArrowUp';
 }
