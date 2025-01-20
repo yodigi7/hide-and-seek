@@ -12,10 +12,10 @@
 		isValidCoords,
 		removeTrail,
 		toGrid,
-		isUpEvent,
-		isLeftEvent,
-		isRightEvent,
-		isDownEvent
+		isUpKey,
+		isDownKey,
+		isRightKey,
+		isLeftKey
 	} from '$lib/gameHelpers';
 	/** @type {number[]} */
 	/** @type {number[]} */
@@ -25,7 +25,7 @@
 	/** @type {number[]} */
 	let intervals = [];
 	let win = false;
-	/** @type {WebSocket} */
+	/** @type {WebSocket | undefined | null} */
 	let socket;
 	/** @type {number | undefined} */
 	let gameSteps;
@@ -46,31 +46,33 @@
 	 */
 	function handleKeyDown(event) {
 		if (event.key === 'Escape') {
+			if (!socket) return;
 			socket.send(JSON.stringify({ move: [] }));
 			grid = removeTrail(grid, VISION_COLOR);
 			resetFastHider();
-		} else if (isUpEvent(event)) {
+		} else if (isUpKey(event.key)) {
 			if (isValidCoords([fastHiderCoords[0] - 1, fastHiderCoords[1]])) {
 				fastHiderCoords[0] -= 1;
 				fastHiderTrail.push([...fastHiderCoords]);
 			}
-		} else if (isLeftEvent(event)) {
+		} else if (isLeftKey(event.key)) {
 			if (isValidCoords([fastHiderCoords[0], fastHiderCoords[1] - 1])) {
 				fastHiderCoords[1] -= 1;
 				fastHiderTrail.push([...fastHiderCoords]);
 			}
-		} else if (isDownEvent(event)) {
+		} else if (isDownKey(event.key)) {
 			if (isValidCoords([fastHiderCoords[0] + 1, fastHiderCoords[1]])) {
 				fastHiderCoords[0] += 1;
 				fastHiderTrail.push([...fastHiderCoords]);
 			}
-		} else if (isRightEvent(event)) {
+		} else if (isRightKey(event.key)) {
 			if (isValidCoords([fastHiderCoords[0], fastHiderCoords[1] + 1])) {
 				fastHiderCoords[1] += 1;
 				fastHiderTrail.push([...fastHiderCoords]);
 			}
 		}
 		if (fastHiderTrail.length === 1) {
+			if (!socket) return;
 			console.log(`Sending: ${JSON.stringify({ move: fastHiderTrail[0] })}`);
 			socket.send(JSON.stringify({ move: fastHiderTrail[0] }));
 		}
@@ -78,14 +80,26 @@
 	}
 
 	function cleanUp() {
+		socket?.close(1000);
 		window.removeEventListener('keydown', handleKeyDown);
 		for (const interval of intervals) {
 			clearInterval(interval);
 		}
+		socket = null;
 		connected = false;
 	}
 
+  function setup() {
+    win = false;
+    fastHiderCoords = [];
+    fastHiderTrail = [];
+    intervals = [];
+		window.addEventListener('keydown', handleKeyDown);
+		connectWebsocket();
+  }
+
 	function connectWebsocket() {
+		socket?.close(1000);
 		socket = new WebSocket(`ws://${window.location.hostname}:8765`); // Replace with your server address
 
 		// Event listeners
@@ -104,7 +118,7 @@
 				return;
 			}
 			if (isGrid(msg)) {
-				grid = toGrid(msg.grid);
+				grid = toGrid(msg);
 				if (
 					fastHiderTrail.length > 0 &&
 					arraysAreEqual(getHiderCoords(grid) ?? [], fastHiderTrail[0])
@@ -145,14 +159,18 @@
 
 	import { onMount } from 'svelte';
 	onMount(() => {
-		window.addEventListener('keydown', handleKeyDown);
-		connectWebsocket();
+    setup();
 		return cleanUp;
 	});
 </script>
 
-{#if win}
-	<div class="text-8xl"><strong>YOU LOST after {gameSteps} steps</strong></div>
-{/if}
-<Grid {grid} />
-Connected: {connected}
+<div class="flex flex-col items-center justify-center">
+	{#if win}
+		<div class="text-8xl"><strong>YOU LOST after {gameSteps} steps</strong></div>
+	{/if}
+	{#if !connected}
+		<button on:click={setup}>Connect</button>
+	{/if}
+	<Grid {grid} />
+  <a href="/">Home</a>
+</div>

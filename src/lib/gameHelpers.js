@@ -1,4 +1,4 @@
-import { ROWS, COLS, SEEKER_VALUE, FAST_SEEKER_COLOR, FAST_SEEKER_TRAIL_COLOR, VISION_COLOR, EMPTY_COLOR, NUMBER_TO_MAP, HIDER_VALUE } from './constants.js';
+import { ROWS, COLS, SEEKER_VALUE, FAST_SEEKER_COLOR, FAST_SEEKER_TRAIL_COLOR, VISION_COLOR, EMPTY_COLOR, NUMBER_TO_MAP, HIDER_VALUE, NUMBER_TO_MAP_SEEING } from './constants.js';
 
 /**
  * Creates a fresh new board filled with the specified color.
@@ -69,10 +69,17 @@ export function updateGrid(grid, coords, color) {
 
 /**
  * Converts the number[][] grid from the server to the string[][] grid expected to render
- * @param {number[][]} serverGrid the number[][] grid from the server
+ * @param {Object.<string, any>} msg message from the server
  * @returns {string[][]} the converted string[][] grid
  */
-export function toGrid(serverGrid) {
+export function toGrid(msg) {
+    /** @type {number[][]} */
+    let serverGrid = msg.grid;
+    if (msg.seeker_can_see) {
+        return serverGrid.map(row =>
+            row.map(cell => NUMBER_TO_MAP_SEEING[cell] || 'Unknown')
+        );
+    }
     return serverGrid.map(row =>
         row.map(cell => NUMBER_TO_MAP[cell] || 'Unknown')
     );
@@ -148,33 +155,31 @@ export function arraysAreEqual(arr1, arr2) {
 
 
 /**
- * @param {KeyboardEvent} event
+ * @param {string} key
  */
-export function isRightEvent(event) {
-    console.log(event);
-    return event.key === 'd' || event.key === 'l' || event.key === 'ArrowRight';
+export function isRightKey(key) {
+    return key === 'd' || key === 'l' || key === 'ArrowRight';
 }
 
 /**
- * @param {KeyboardEvent} event
+ * @param {string} key
  */
-export function isLeftEvent(event) {
-    console.log(event);
-    return event.key === 'a' || event.key === 'h' || event.key === 'ArrowLeft';
+export function isLeftKey(key) {
+    console.log(key);
+    return key === 'a' || key === 'h' || key === 'ArrowLeft';
 }
 
 /**
- * @param {KeyboardEvent} event
+ * @param {string} key
  */
-export function isDownEvent(event) {
-    console.log(event);
-    return event.key === 's' || event.key === 'j' || event.key === 'ArrowDown';
+export function isDownKey(key) {
+    console.log(key);
+    return key === 's' || key === 'j' || key === 'ArrowDown';
 }
 
 /**
- * @param {KeyboardEvent} event
+ * @param {string} key
  */
-export function isUpEvent(event) {
-    console.log(event);
-    return event.key === 'w' || event.key === 'k' || event.key === 'ArrowUp';
+export function isUpKey(key) {
+    return key === 'w' || key === 'k' || key === 'ArrowUp';
 }

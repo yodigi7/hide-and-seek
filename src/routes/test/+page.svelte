@@ -202,6 +202,22 @@
   });
 </script>
 
+{#if win}
+  <div class="text-8xl"><strong>YOU WIN</strong></div>
+{/if}
+<div class="grid">
+  {#each grid as row, rowIndex}
+    {#each row as color, colIndex}
+      <div
+        id="square-{rowIndex}-{colIndex}"
+        class="square"
+        style="background-color: {color};"
+      ></div>
+    {/each}
+  {/each}
+</div>
+<a href="/">Home</a>
+
 <style>
   .grid {
     display: grid;
@@ -217,18 +233,3 @@
     border: 1px solid black; /* Add black border */
   }
 </style>
-
-{#if win}
-  <div class="text-8xl"><strong>YOU WIN</strong></div>
-{/if}
-<div class="grid">
-  {#each grid as row, rowIndex}
-    {#each row as color, colIndex}
-      <div
-        id="square-{rowIndex}-{colIndex}"
-        class="square"
-        style="background-color: {color};"
-      ></div>
-    {/each}
-  {/each}
-</div>

@@ -11,10 +11,10 @@
 		isGrid,
 		isOver,
 		isStatus,
-		isUpEvent,
-		isLeftEvent,
-		isDownEvent,
-		isRightEvent
+		isUpKey,
+		isLeftKey,
+		isDownKey,
+		isRightKey,
 	} from '$lib/gameHelpers';
 	import { EMPTY_COLOR } from '$lib/constants';
 
@@ -25,7 +25,7 @@
 	/** @type {number[]} */
 	let intervals = [];
 	let win = false;
-	/** @type {WebSocket} */
+	/** @type {WebSocket | undefined | null} */
 	let socket;
 	/** @type {number | undefined} */
 	let gameSteps;
@@ -46,35 +46,37 @@
 	 */
 	function handleKeyDown(event) {
 		if (event.key === 'Escape') {
+      if (!socket) return;
 			socket.send(JSON.stringify({ move: [] }));
 			removeTrail(grid, EMPTY_COLOR);
 			resetFastSeeker();
 		}
-		if (isUpEvent(event)) {
+		if (isUpKey(event.key)) {
 			if (isValidCoords([fastSeekerCoords[0] - 1, fastSeekerCoords[1]])) {
 				fastSeekerCoords[0] -= 1;
 				fastSeekerTrail.push([...fastSeekerCoords]);
 			}
 		}
-		if (isLeftEvent(event)) {
+		if (isLeftKey(event.key)) {
 			if (isValidCoords([fastSeekerCoords[0], fastSeekerCoords[1] - 1])) {
 				fastSeekerCoords[1] -= 1;
 				fastSeekerTrail.push([...fastSeekerCoords]);
 			}
 		}
-		if (isDownEvent(event)) {
+		if (isDownKey(event.key)) {
 			if (isValidCoords([fastSeekerCoords[0] + 1, fastSeekerCoords[1]])) {
 				fastSeekerCoords[0] += 1;
 				fastSeekerTrail.push([...fastSeekerCoords]);
 			}
 		}
-		if (isRightEvent(event)) {
+		if (isRightKey(event.key)) {
 			if (isValidCoords([fastSeekerCoords[0], fastSeekerCoords[1] + 1])) {
 				fastSeekerCoords[1] += 1;
 				fastSeekerTrail.push([...fastSeekerCoords]);
 			}
 		}
 		if (fastSeekerTrail.length === 1) {
+      if (!socket) return;
 			console.log(`Sending: ${JSON.stringify({ move: fastSeekerTrail[0] })}`);
 			socket.send(JSON.stringify({ move: fastSeekerTrail[0] }));
 		}
@@ -82,14 +84,26 @@
 	}
 
 	function cleanUp() {
+		socket?.close(1000);
 		window.removeEventListener('keydown', handleKeyDown);
 		for (const interval of intervals) {
 			clearInterval(interval);
 		}
+    socket = null;
 		connected = false;
 	}
 
+  function setup() {
+    win = false;
+    fastSeekerCoords = [];
+    fastSeekerTrail = [];
+    intervals = [];
+		window.addEventListener('keydown', handleKeyDown);
+		connectWebsocket();
+  }
+
 	function connectWebsocket() {
+		socket?.close(1000);
 		socket = new WebSocket(`ws://${window.location.hostname}:8765`);
 
 		// Event listeners
@@ -108,7 +122,7 @@
 				return;
 			}
 			if (isGrid(msg)) {
-				grid = toGrid(msg.grid);
+				grid = toGrid(msg);
 				if (fastSeekerTrail.length > 0) {
 					fastSeekerTrail.shift();
 				}
@@ -152,8 +166,13 @@
 	});
 </script>
 
-{#if win}
-	<div class="text-8xl"><strong>YOU WON after {gameSteps} steps</strong></div>
-{/if}
-<Grid {grid} />
-Connected: {connected}
+<div class="flex flex-col items-center justify-center">
+	{#if win}
+		<div class="text-8xl"><strong>YOU WIN after {gameSteps} steps</strong></div>
+	{/if}
+	{#if !connected}
+		<button on:click={setup}>Connect</button>
+	{/if}
+	<Grid {grid} />
+  <a href="/">Home</a>
+</div>

@@ -40,16 +40,16 @@ You can preview the production build with `npm run preview`.
 
 ## Compute engine
 
-Run in the background
+### Run in the background
+
+1. `cd` into the build directory
+
+2. `python3 -m http.server 5173` to start static file serving to port `5173` since that is the one I opened the firewall to
+
+### Kill background process
 
 ```bash
-nohup npm run dev -- --host &
-```
-
-Get the process id in background
-
-```bash
-pgrep -f "npm run dev"
+pgrep -f "python3 -m http.server 5173"
 ```
 
 Kill background process
